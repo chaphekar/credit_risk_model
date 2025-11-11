@@ -1,0 +1,8 @@
+"Variable","Expected.Sign","Intuition"
+"Real Gross Domestic Product","+","Real GDP growth indicates stronger economy"
+"Real Disposable Personal Income","+","Real DPI growth indicates stronger economy"
+"Dow Jones Stock Market Index","+","Stronger Equity Market indicates stronger economy"
+"Unemployment Rate","-","Decreasing unemployment rate indicates stronger economy"
+"S&P 500 Volatility","-","Rising volatility signals instability in equities markets"
+"BBB Spread","-","Widen Credit Spread indicates higher credit risk"
+"Consumer Price Index","+","Higher CPI generally indicate stronger economy"

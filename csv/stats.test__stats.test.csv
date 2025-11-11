@@ -1,0 +1,6 @@
+"Diagnostic","Test","Interpretation"
+"Collinearity","Max. VIF","VIF > 10 indicates significant multi-collinearity"
+"Residual Autocorrelation","Durbin-Watson","p < 10% indicates first order autocorrelation"
+"Residual Stationarity","Augmented Dickey-Fuller/Phillips-Perron","p < 10% indicates stationarity at corresponding level"
+"Residual Normality","Shapiro-Wilk","p < 10% indicates significant departure from normality"
+"Residual Homoscedasticity","Breusch-Pagan","p < 10% indicates significant heteroscedasticity"

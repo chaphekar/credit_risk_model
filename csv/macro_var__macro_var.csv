@@ -1,0 +1,4 @@
+"Category","Rationale","Variables"
+"Broad Economic Variables","Economic conditions affect the financial condition of the bank's borrowers","Real GDP growth, Nominal GDP growth, Real DI growth, Nominal DI growth, Unemployment rate, 
+             CPI inflation rate, Prime rate, Dow Jones index, BBB corporate yield, BBB Spread, Market volatility index"
+"Retail Metrics","Metrics related to retail products","Mortgage rate"

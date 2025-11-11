@@ -1,0 +1,13 @@
+"Variable","Description","Original","Ydf","Ygr","Lag"
+"Unemp.Rt","Unemployment Rate",TRUE,TRUE,NA,TRUE
+"BBB.Rt","Merrill Lynch 10 - Year Bbb Corporate Bond Rate",TRUE,TRUE,NA,TRUE
+"Mort.Rt","30 Year Fixed Mortgage Rates",TRUE,TRUE,NA,TRUE
+"Prime.Rt","Bank Prime Rate",TRUE,TRUE,NA,TRUE
+"DJIA","Dow Jones Stock Market Index",TRUE,NA,TRUE,TRUE
+"VIX","S&P 500 Volatility",TRUE,NA,TRUE,TRUE
+"NGDP","Nominal Gross Domestic Product",TRUE,NA,TRUE,TRUE
+"RGDP","Real Gross Domestic Product",TRUE,NA,TRUE,TRUE
+"NDI","Nominal Disposable Personal Income",TRUE,NA,TRUE,TRUE
+"RDI","Real Disposable Personal Income",TRUE,NA,TRUE,TRUE
+"CPI","Consumer Price Index",TRUE,NA,TRUE,TRUE
+"BBB.Spd","BBB Rate - 10 Year Treasury Rate",TRUE,TRUE,NA,TRUE
