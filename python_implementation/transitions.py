@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-
+from portfolio_simulator import PortfolioSimulator
 
 # =========================================
 # ---- Utility / Core Functions ------------
@@ -231,15 +231,19 @@ def print_menu():
     print("5. Compute probability of default (PD)")
     print("6. Compute expected time to default (ETTD)")
     print("7. Run macro scenario Z/DF demo")
-    print("8. Exit")
+    print("8. Simulate portfolio credit rating transitions")
+    print("9. Exit")
 
 
 def main():
     print("\n=== Enhanced Credit Risk Model ===")
-    file_path = input("Enter transition CSV path: ").strip()
+    # file_path = input("Enter transition CSV path: ").strip()
+    file_path = "../csv/loan__loan.csv"
     df = load_data(file_path)
     states = get_states(df)
-    default_state = input("Enter default state name: ").strip()
+    # print("Available rating states:", states)
+    # default_state = input("Enter default state name: ").strip()
+    default_state = "Default"
 
     matrices = build_transition_matrices(df, states, default_state)
     avg_matrix = build_weighted_average_matrix(df, states, default_state)
@@ -276,6 +280,22 @@ def main():
         elif choice == "7":
             run_macro_scenario_demo()
         elif choice == "8":
+            n = int(input("Enter the number of firms: "))
+            start_year = int(input("Enter the start year: "))
+            duration = int(input("Enter the duration: "))
+            portfolio = []
+            for i in range(n):
+                rating = input(f"Enter initial rating for firm {i+1}: ").strip()
+                portfolio.append(rating)
+            simulator = PortfolioSimulator({year: matrices[year]["prob"].values for year in matrices}, states)
+            results = simulator.simulate_portfolio(start_year, duration, portfolio)
+            print("Simulation results:")
+            print(results)
+            # print("Trajectories:", results["trajectories"])
+            # print("Defaults:", results["defaults"])
+            # print("Yearly default counts:", results["yearly_default_counts"])
+            # print("Yearly rating counts:", results["yearly_rating_counts"])
+        elif choice == "9":
             break
         else:
             print("Invalid choice.")
