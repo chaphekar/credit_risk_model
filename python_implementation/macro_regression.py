@@ -88,22 +88,28 @@ def run_macro_regression(csv_path, dep_var="Z", top_k=10, output_dir="outputs"):
     X_scaled = sm.add_constant(X_scaled)
 
     model = sm.OLS(y, X_scaled).fit()
-
-
-    # Step 5: Get coefficients
-    betas = pd.Series(model.params, index=["Intercept"] + selected_features)
+    
+    # Step 5: Get coefficients (including intercept)
+    betas = model.params.rename_axis("Variable").reset_index(name="Beta")
 
     # Step 6: Rank by t-stats (absolute value)
-    tstats = model.tvalues[1:]  # skip intercept
-    top_vars = tstats.abs().sort_values(ascending=False).index[:top_k]
-    betas = betas.loc[["Intercept"] + list(top_vars)]
+    tstats = model.tvalues.drop("const", errors="ignore")  # skip intercept for ranking
+    top_vars = tstats.abs().sort_values(ascending=False).index[:top_k].tolist()
+
+    # Always include the intercept in output
+    keep_vars = ["const"] + top_vars
+    betas = betas[betas["Variable"].isin(keep_vars)]
 
     # Step 7: Save results
     os.makedirs(output_dir, exist_ok=True)
     beta_path = os.path.join(output_dir, "macro_betas.csv")
-    betas.to_csv(beta_path, index_label="Variable", header=["Beta"])
+    betas.to_csv(beta_path, index=False)
 
     print("\n✅ Regression completed successfully.")
+    print(f"📁 Betas saved to: {beta_path}")
+    print("\nTop Variables and Coefficients:\n", betas)
+    print("\nModel Summary:\n", model.summary())
+
     print(f"📁 Betas saved to: {beta_path}")
     print("\nTop Variables and Coefficients:\n", betas)
     print("\nModel Summary:\n", model.summary())

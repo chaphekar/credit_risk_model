@@ -181,7 +181,6 @@ def plot_z_df_forecasts(df: pd.DataFrame, year_col="Year"):
     plt.show()
 
 
-
 def run_macro_scenario_demo():
     """Example of macro scenario Z/DF forecasting pipeline."""
     hist = pd.DataFrame({
@@ -191,7 +190,7 @@ def run_macro_scenario_demo():
         "Z": [0.85, 0.82, 0.83, 0.86]
     })
 
-    model = fit_z_model(hist.drop(columns=["Year"]))  # ✅ FIX: now this has GDP_Growth, Unemp_Rate, Z
+    model = fit_z_model(hist.drop(columns=["Year"]))
 
     base = pd.DataFrame({
         "Year": [2019, 2020, 2021],
@@ -219,6 +218,58 @@ def run_macro_scenario_demo():
 
 
 # =========================================
+# ---- NEW: Macro scenario using beta CSVs -
+# =========================================
+
+def run_macro_scenario_from_beta():
+    """
+    Run macro scenario Z/DF forecast using externally provided beta coefficients and macro scenario CSVs.
+    Expected input files:
+      - beta_file.csv : columns = ['Variable', 'Coefficient'], last row may be 'Intercept'
+      - macro_file.csv : must include ['Year', 'Scenario', <macro variables>]
+    """
+    beta_path = input("Enter path to beta coefficients CSV: ").strip()
+    macro_path = input("Enter path to macro scenario CSV: ").strip()
+
+    # --- Load inputs ---
+    beta_df = pd.read_csv("outputs/macro_betas.csv")
+    macro_df = pd.read_csv("../csv/macro_a.csv")
+
+    # --- Extract intercept and betas ---
+    intercept_row = beta_df[beta_df["Variable"].str.lower() == "intercept"]
+    intercept = float(intercept_row["Coefficient"].values[0]) if not intercept_row.empty else 0.0
+
+    betas = (
+        beta_df[~beta_df["Variable"].str.lower().eq("intercept")]
+        .set_index("Variable")["Coefficient"]
+        .to_dict()
+    )
+
+    print("\nLoaded coefficients:")
+    print(f"Intercept (α): {intercept:.4f}")
+    for var, coef in betas.items():
+        print(f"{var}: {coef:.4f}")
+
+    # --- Compute Z forecast for each row in macro_df ---
+    z_forecasts = []
+    for _, row in macro_df.iterrows():
+        z_val = intercept
+        for var, coef in betas.items():
+            if var in row:
+                z_val += coef * row[var]
+        z_forecasts.append(z_val)
+
+    macro_df["Z_forecast"] = z_forecasts
+    macro_df["DF_forecast"] = compute_df_from_z(np.array(z_forecasts), a=-1.0, b=1.5)
+
+    print("\nComputed Z and DF forecasts:")
+    print(macro_df[["Year", "Scenario", "Z_forecast", "DF_forecast"]].round(4))
+
+    # --- Plot like before ---
+    plot_z_df_forecasts(macro_df)
+
+
+# =========================================
 # ---- CLI Menu ---------------------------
 # =========================================
 
@@ -230,19 +281,17 @@ def print_menu():
     print("4. Compute n-year transition matrix")
     print("5. Compute probability of default (PD)")
     print("6. Compute expected time to default (ETTD)")
-    print("7. Run macro scenario Z/DF demo")
+    print("7. Run macro scenario Z/DF demo (built-in)")
     print("8. Simulate portfolio credit rating transitions")
-    print("9. Exit")
+    print("9. Run macro scenario Z/DF demo using external beta & macro CSVs")
+    print("10. Exit")
 
 
 def main():
     print("\n=== Enhanced Credit Risk Model ===")
-    # file_path = input("Enter transition CSV path: ").strip()
-    file_path = "../csv/loan__loan.csv"
+    file_path = "../csv/transition.csv"
     df = load_data(file_path)
     states = get_states(df)
-    # print("Available rating states:", states)
-    # default_state = input("Enter default state name: ").strip()
     default_state = "Default"
 
     matrices = build_transition_matrices(df, states, default_state)
@@ -291,12 +340,10 @@ def main():
             results = simulator.simulate_portfolio(start_year, duration, portfolio)
             print("Simulation results:")
             print(results)
-            # print("Trajectories:", results["trajectories"])
-            # print("Defaults:", results["defaults"])
-            # print("Yearly default counts:", results["yearly_default_counts"])
-            # print("Yearly rating counts:", results["yearly_rating_counts"])
-        elif choice == "9":
+        elif choice == "10":
             break
+        elif choice == "9":
+            run_macro_scenario_from_beta()
         else:
             print("Invalid choice.")
 
