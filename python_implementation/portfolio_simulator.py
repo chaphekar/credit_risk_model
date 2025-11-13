@@ -44,6 +44,12 @@ class PortfolioSimulator:
         """
         # print(transition_matrices)
         self.transition_matrices = transition_matrices
+        #for all transition matrices, append a new row with probabilities of staying in default (1.0)
+        for year in self.transition_matrices:
+            default_row = np.zeros((1, len(rating_labels)))
+            default_row[0, -1] = 1.0  # 100% chance of staying in default
+            self.transition_matrices[year] = np.vstack([self.transition_matrices[year], default_row])
+
         self.rating_labels = rating_labels
         self.rating_to_index = {r: i for i, r in enumerate(rating_labels)}
 
@@ -124,6 +130,27 @@ class PortfolioSimulator:
                 else:
                     results[firm_idx][final_rating] = 1
 
+        # need to print a theoretical result matrix as well which would be the expected distribution after duration years
+        theoretical_results = {}
+        for firm_idx in range(firms):
+            initial_rating = portfolio[firm_idx]
+            initial_vector = np.zeros(len(self.rating_labels))
+            initial_vector[self.rating_to_index[initial_rating]] = 1.0
+
+            # Multiply the initial vector by the transition matrices for each year
+            result_vector = initial_vector
+            for year_offset in range(duration):
+                current_year = start_year + year_offset
+                result_vector = np.dot(result_vector, self.transition_matrices[current_year])
+
+            theoretical_results[firm_idx] = {self.rating_labels[i]: result_vector[i] for i in range(len(self.rating_labels))}
+
+        print("Theoretical Results (Expected Distribution after simulations):")
+        for firm_idx in range(firms):
+            print(f"Firm {firm_idx} starting with rating {portfolio[firm_idx]}:")
+            for rating, prob in theoretical_results[firm_idx].items():
+                print(f"  {rating}: {prob:.4f}")
+            print()
         return results
             
 
