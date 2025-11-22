@@ -35,12 +35,11 @@ class TransitionMatrixRegressor(nn.Module):
     def forward(self, x):
         """
         x: (batch_size, 12)
-        returns: (batch_size, 7, 8) row-normalized probabilities
+        returns: (batch_size, 7, 8) logits (NOT softmaxed)
         """
         logits = self.linear(x)  # (batch_size, 56)
         logits = logits.view(-1, self.out_rows, self.out_cols)
-        probs = torch.softmax(logits, dim=2)  # row-wise softmax
-        return probs
+        return logits
 
 
 # ------- TRAINING FUNCTION -------- #
@@ -58,36 +57,33 @@ def train_model(X, Y, num_epochs=2000, lr=0.01):
     model = TransitionMatrixRegressor()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
-    # We want row-wise cross entropy (softmax + negative log-likelihood)
-    loss_fn = nn.CrossEntropyLoss()
+    # Use distributional loss: KL divergence (expects log-probs as input and
+    # target probabilities). Monitor Brier (MSE) and top-1 accuracy too.
+    loss_fn = nn.KLDivLoss(reduction="batchmean")
+    mse_fn = nn.MSELoss(reduction="mean")
 
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs + 1):
+        model.train()
         optimizer.zero_grad()
 
-        # Model predicts probs shape: (N, 7, 8)
-        preds = model(X_t)
+        preds = model(X_t)                       # logits shape: (N,7,8)
+        log_probs = torch.log_softmax(preds, dim=2)
 
-        # Compute loss row by row
-        total_loss = 0
-        for i in range(preds.shape[0]):        # each year
-            for r in range(7):                # each rating row
-                # CrossEntropyLoss expects:
-                # input: (8 logits)
-                # target: class index (0-7)
-
-                # Convert true probability distribution to class label:
-                true_class = torch.argmax(Y_t[i, r]).long()
-
-                total_loss += loss_fn(
-                    preds[i, r].unsqueeze(0), 
-                    true_class.unsqueeze(0)
-                )
-
-        total_loss.backward()
+        loss = loss_fn(log_probs, Y_t)           # KL divergence
+        loss.backward()
         optimizer.step()
 
-        if epoch % 200 == 0:
-            print(f"Epoch {epoch}, Loss = {total_loss.item():.6f}")
+        # Monitoring metrics (vectorized)
+        if epoch % 10 == 0 or epoch == 1 or epoch == num_epochs:
+            model.eval()
+            with torch.no_grad():
+                probs = torch.softmax(preds, dim=2)
+                brier = mse_fn(probs, Y_t)          # mean squared error across elements
+                pred_classes = probs.argmax(dim=2)
+                true_classes = Y_t.argmax(dim=2)
+                acc = (pred_classes == true_classes).float().mean()
+
+            print(f"Epoch {epoch:4d} | KL loss: {loss.item():.6f} | Brier(MSE): {brier.item():.6f} | top1 acc: {acc.item():.4f}")
 
     return model
 
@@ -100,7 +96,8 @@ def predict_transition_matrix(model, x_single):
     returns: (7, 8) probability matrix
     """
     x_t = torch.tensor(x_single, dtype=torch.float32).unsqueeze(0)
-    probs = model(x_t).detach().numpy()[0]
+    logits = model(x_t).detach()
+    probs = torch.softmax(logits, dim=2).numpy()[0]
     return probs
 
 if __name__ == "__main__":
@@ -161,4 +158,18 @@ if __name__ == "__main__":
     print("X shape:", X.shape)
     print("Y shape:", Y.shape)
 
-    model = train_model(X, Y, num_epochs=2000, lr=0.01)
+    print(Y)
+
+    model = train_model(X, Y, lr=0.001)
+    print("Training complete.")
+    
+    # Example prediction
+    # read the 12 features from macro_pred.csv for years 2016 to 2019
+    df_pred = pd.read_csv("macro_pred.csv")
+    X_pred = df_pred[selected_features].values
+    for i in range(X_pred.shape[0]):
+        x_single = X_pred[i]
+        pred_matrix = predict_transition_matrix(model, x_single)
+        print(f"Predicted transition matrix for sample {i}:")
+        print(pred_matrix)
+        print()
