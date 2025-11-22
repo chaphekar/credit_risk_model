@@ -83,7 +83,7 @@ def train_model(X, Y, num_epochs=2000, lr=0.01):
                 true_classes = Y_t.argmax(dim=2)
                 acc = (pred_classes == true_classes).float().mean()
 
-            print(f"Epoch {epoch:4d} | KL loss: {loss.item():.6f} | Brier(MSE): {brier.item():.6f} | top1 acc: {acc.item():.4f}")
+            # print(f"Epoch {epoch:4d} | KL loss: {loss.item():.6f} | Brier(MSE): {brier.item():.6f} | top1 acc: {acc.item():.4f}")
 
     return model
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     # read the Y data from ../csv/transition.csv
     df_Y = pd.read_csv("../csv/transition.csv")
-    print(df_Y.columns)
+    # print(df_Y.columns)
 
     # df_Y has columns ['Year', 'Rating', 'Cnt', 'AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'Default'
     # we need to make a matrix of shape (N_years, 7, 8) from this
@@ -155,10 +155,10 @@ if __name__ == "__main__":
                 Y[i, r, 6] = row['CCC']
                 Y[i, r, 7] = row['Default']
 
-    print("X shape:", X.shape)
-    print("Y shape:", Y.shape)
+    # print("X shape:", X.shape)
+    # print("Y shape:", Y.shape)
 
-    print(Y)
+    # print(Y)
 
     model = train_model(X, Y, lr=0.001)
     print("Training complete.")
